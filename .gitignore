@@ -1,2 +1,3 @@
-data/
-*.xes
+data/*.xes
+data/*.csv
+.venv/
