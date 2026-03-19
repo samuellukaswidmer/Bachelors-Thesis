@@ -65,7 +65,7 @@ def add_activity_start_times(prefix, features, reference_date, all_activities):
             features[f'{activity}_abs_days::start'] = -1
             features[f'{activity}_days_since'] = -1
             continue
-        act_time = prefix[prefix["case:concept:name"] == activity].iloc[0]["time:timestamp"]
+        act_time = prefix[prefix["concept:name"] == activity].iloc[0]["time:timestamp"]
         features[f'{activity}_abs_days::start'] = (act_time - reference_date).days
         features[f'{activity}_days_since'] = (prefix_end_time - act_time).days
 
