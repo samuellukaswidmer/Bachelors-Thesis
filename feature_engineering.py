@@ -126,3 +126,17 @@ def add_time_features(prefix, features):
     features['time::relative_log_time'] = prefix['relative_log_time'].iloc[-1]
     features['time::relative_case_time'] = prefix['relative_case_time'].iloc[-1]
     features['time::time_since_prev'] = prefix['time_since_prev'].iloc[-1]
+
+def add_duration_vs_period_avg(prefix_log_train, prefix_log_test):
+    year_month_groups = prefix_log_train.groupby(['time::case_start_year', 'time::start_month'])['time::relative_case_time']
+    prefix_log_train['system::duration_vs_period_avg'] = prefix_log_train['time::relative_case_time'] - year_month_groups.transform('mean')
+
+    year_month_avg = prefix_log_train.groupby(['time::case_start_year', 'time::start_month'])['time::relative_case_time'].mean()
+    prefix_log_test['system::duration_vs_period_avg'] = prefix_log_test.apply(
+        lambda row: row['time::relative_case_time'] - year_month_avg.get(
+            (row['time::case_start_year'], row['time::start_month']),
+            row['time::relative_case_time']
+        ),
+        axis=1
+    )
+    return prefix_log_train, prefix_log_test
