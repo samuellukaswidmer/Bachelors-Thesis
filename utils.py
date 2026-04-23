@@ -63,3 +63,33 @@ def run_ablation(X_train, X_test, y_train, y_test, variants):
             'N Features': len(available)
         })
     return pd.DataFrame(results).round(3)
+
+def run_ablation_with_importance(X_train, X_test, y_train, y_test, variants):
+    results = []
+    importances = {}
+    for name, cols in variants.items():
+        available = list(dict.fromkeys([c for c in cols if c in X_train.columns]))
+        model = RandomForestRegressor(n_estimators=100, random_state=42)
+        model.fit(X_train[available], y_train)
+        y_pred = model.predict(X_test[available])
+        results.append({
+            'Variant': name,
+            'MAE': mean_absolute_error(y_test, y_pred),
+            'RMSE': np.sqrt(mean_squared_error(y_test, y_pred)),
+            'R2': r2_score(y_test, y_pred),
+            'N Features': len(available)
+        })
+        importances[name] = pd.Series(
+            model.feature_importances_, index=available
+        ).sort_values(ascending=False).head(10)
+    return pd.DataFrame(results).round(3), importances
+
+
+def get_targeted_variants(X_train, primary_activity_col):
+    all_cols = list(X_train.columns)
+    return {
+        'Full pipeline': all_cols,
+        'Without relative_log_time': [c for c in all_cols if c != 'time::relative_log_time'],
+        f'Without {primary_activity_col}': [c for c in all_cols if c != primary_activity_col],
+        'Without both': [c for c in all_cols if c not in ['time::relative_log_time', primary_activity_col]],
+    }

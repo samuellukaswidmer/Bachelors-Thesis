@@ -26,6 +26,7 @@ def extract_prefixes_with_time_cutoff(
     activities_to_flag = event_log[activity_col].unique()
 
     # event_log = event_log.sort_values([case_id_col, timestamp_col])
+    case_times = event_log.groupby(case_id_col)[timestamp_col].agg(case_start='min', case_end='max').reset_index()
 
     for case, group in event_log.groupby(case_id_col):
         prefix = group[group['relative_case_time'] < cutoff_in_days]
@@ -48,6 +49,8 @@ def extract_prefixes_with_time_cutoff(
         add_prefix_stats(prefix, features, case)
         add_resource_features(prefix, features)
         add_holiday_features(prefix, features, prefix_end_time, holidays, timestamp_col, timezone)
+        active_cases = ((case_times['case_start'] <= prefix_end_time) &(case_times['case_end'] >= prefix_end_time)).sum()
+        features['system::system_load'] = active_cases
         features['target'] = target_value
         all_prefixes.append(features)
 
