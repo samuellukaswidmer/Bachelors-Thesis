@@ -25,7 +25,7 @@ def get_ablation_variants(X_train):
     raw_sequence = activity_count_cols + [col for col in meta_cols if 'prefix_length' in col]
     case_level = raw_sequence + case_cols
     event_level = case_level + event_cols + activity_start_cols + time_cols
-    system_level = event_level + holiday_cols + resource_cols
+    system_level = event_level + system_cols
 
     high_level_variants = {
         'Raw sequence': raw_sequence,
