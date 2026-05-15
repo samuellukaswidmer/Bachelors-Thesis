@@ -51,7 +51,7 @@ def get_ablation_variants(X_train):
 def run_ablation(X_train, X_test, y_train, y_test, variants):
     results = []
     for name, cols in variants.items():
-        available = list(dict.fromkeys([c for c in cols if c in X_train.columns]))
+        available = sorted(set(cols) & set(X_train.columns))
         model = RandomForestRegressor(n_estimators=100, random_state=42)
         model.fit(X_train[available], y_train)
         y_pred = model.predict(X_test[available])
@@ -68,7 +68,7 @@ def run_ablation_with_importance(X_train, X_test, y_train, y_test, variants):
     results = []
     importances = {}
     for name, cols in variants.items():
-        available = list(dict.fromkeys([c for c in cols if c in X_train.columns]))
+        available = sorted(set(cols) & set(X_train.columns))
         model = RandomForestRegressor(n_estimators=100, random_state=42)
         model.fit(X_train[available], y_train)
         y_pred = model.predict(X_test[available])
@@ -93,3 +93,35 @@ def get_targeted_variants(X_train, primary_activity_col):
         f'Without {primary_activity_col}': [c for c in all_cols if c != primary_activity_col],
         'Without both': [c for c in all_cols if c not in ['time::relative_log_time', primary_activity_col]],
     }
+
+def run_group_only_analysis(X_train, X_test, y_train, y_test, group_prefix):
+    
+    group_cols = [
+        col for col in X_train.columns 
+        if col.startswith(f'{group_prefix}::')
+    ]
+    print(f"{group_prefix} columns:", group_cols)
+    
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train[group_cols], y_train)
+    
+    importances = pd.Series(model.feature_importances_, index=group_cols)
+    print(importances.sort_values(ascending=False))
+    
+    y_pred = model.predict(X_test[group_cols])
+    print(f"MAE {group_prefix} only:", mean_absolute_error(y_test, y_pred))
+    
+    return model, importances
+
+def run_single_group_removal(X_train, X_test, y_train, y_test, group_prefix, exclude=None):
+    if exclude is None:
+        exclude = []
+    group_cols = [col for col in X_train.columns 
+                  if col.startswith(f'{group_prefix}::') and col not in exclude]
+    
+    variants = {'Full pipeline': list(X_train.columns)}
+    for col in group_cols:
+        variants[f'Without {col}'] = [c for c in X_train.columns if c != col]
+    
+    results, importances = run_ablation_with_importance(X_train, X_test, y_train, y_test, variants)
+    return results, importances    
