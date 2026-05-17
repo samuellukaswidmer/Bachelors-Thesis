@@ -12,7 +12,6 @@ def detect_static_attributes(event_log, case_id_col='case:concept:name'):
             dynamic_attributes.append(col)
     return static_attributes, dynamic_attributes
 
-
 def add_case_attributes(prefix, features, case_attributes):
     for attribute in case_attributes:
         if pd.api.types.is_numeric_dtype(prefix[attribute]):
@@ -23,7 +22,6 @@ def add_case_attributes(prefix, features, case_attributes):
             if not values.empty:
                 features[f"case::{attribute}"] = values.iloc[0]
     return features
-
 
 def add_event_attributes(prefix, features, event_attributes):
     for attribute in event_attributes:
